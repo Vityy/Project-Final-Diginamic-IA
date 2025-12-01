@@ -1,0 +1,49 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  password String
+  reservations Reservation[]
+}
+
+model Room {
+  id        String @id @default(cuid())
+  name      String
+  capacity  Int
+  location  String
+  reservations Reservation[]
+}
+
+model Resource {
+  id          String @id @default(cuid())
+  type        String
+  description String
+  available   Boolean @default(true)
+  reservations Reservation[]
+}
+
+model Reservation {
+  id          String   @id @default(cuid())
+  userId      String
+  roomId      String
+  resourceId  String?
+  date        String   // ISO date YYYY-MM-DD
+  startTime   String   // HH:mm
+  endTime     String   // HH:mm
+  status      String   @default("Confirmed")
+
+  user     User     @relation(fields: [userId], references: [id])
+  room     Room     @relation(fields: [roomId], references: [id])
+  resource Resource? @relation(fields: [resourceId], references: [id])
+
+  @@index([roomId, date, startTime, endTime])
+}
