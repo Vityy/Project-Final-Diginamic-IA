@@ -39,4 +39,34 @@ export const api = {
     if (!res.ok) throw new Error('Failed to create reservation');
     return res.json();
   },
+
+  async getRooms(token: string) {
+    const res = await fetch(`${baseUrl}/rooms`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to fetch rooms');
+    return res.json();
+  },
+
+  async createRoom(token: string, room: { name: string; capacity: number; location: string }) {
+    const res = await fetch(`${baseUrl}/rooms`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(room),
+    });
+    if (!res.ok) throw new Error('Failed to create room');
+    return res.json();
+  },
+
+  async deleteRoom(token: string, id: string) {
+    const res = await fetch(`${baseUrl}/rooms/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to delete room');
+    return res.json();
+  },
 };

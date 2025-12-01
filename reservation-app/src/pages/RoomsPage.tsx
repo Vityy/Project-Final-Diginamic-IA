@@ -1,6 +1,6 @@
 // src/pages/RoomsPage.tsx
 import { useEffect, useState } from 'react'
-import { roomsService } from '../services/roomsService'
+import { api } from '../services/apiClient'
 import type { Room } from '../types/room'
 import { Table } from '../components/UI/Table'
 import { Button } from '../components/UI/Button'
@@ -11,10 +11,13 @@ export default function RoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState<Omit<Room, 'id'>>({ name: '', capacity: 0, location: '' })
+  const token = localStorage.getItem('token')
 
   async function load() {
     try {
-      setRooms(await roomsService.list())
+      if (!token) throw new Error('Utilisateur non authentifié')
+      const data = await api.getRooms(token)
+      setRooms(data)
     } catch (e) {
       setError((e as Error).message)
     }
@@ -26,7 +29,8 @@ export default function RoomsPage() {
 
   async function create() {
     try {
-      await roomsService.create(draft)
+      if (!token) throw new Error('Utilisateur non authentifié')
+      await api.createRoom(token, draft)
       setDraft({ name: '', capacity: 0, location: '' })
       load()
     } catch (e) {
@@ -36,7 +40,8 @@ export default function RoomsPage() {
 
   async function remove(id: string) {
     try {
-      await roomsService.remove(id)
+      if (!token) throw new Error('Utilisateur non authentifié')
+      await api.deleteRoom(token, id)
       load()
     } catch (e) {
       setError((e as Error).message)
