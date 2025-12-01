@@ -1,5 +1,5 @@
 // src/pages/ReservationsPage.tsx
-import { useFetch } from '../hooks/useFetch'
+import { useEffect, useState } from 'react'
 import { reservationsService } from '../services/reservationsService'
 import type { Reservation } from '../types/reservation'
 import { Table } from '../components/UI/Table'
@@ -10,16 +10,37 @@ import { useNavigate } from 'react-router-dom'
 import { formatTimeRange } from '../utils/format'
 
 export default function ReservationsPage() {
-  const { data, loading, error, refresh } = useFetch<Reservation[]>(reservationsService.list, [])
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const token = localStorage.getItem('token')
+
+  async function load() {
+    try {
+      if (!token) throw new Error('Utilisateur non authentifié')
+      setLoading(true)
+      const data = await reservationsService.list(token)
+      setReservations(data)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    load()
+  }, [])
 
   async function cancel(id: string) {
     try {
-      await reservationsService.remove(id)
-      await refresh()
+      if (!token) throw new Error('Utilisateur non authentifié')
+      await reservationsService.remove(token, id)
+      await load()
     } catch (e) {
-      // Surface minimal error
       console.error(e)
+      setError((e as Error).message)
     }
   }
 
@@ -31,7 +52,7 @@ export default function ReservationsPage() {
       </header>
       {loading && <Spinner />}
       {error && <Alert kind="error" message={error} />}
-      {data && (
+      {reservations.length > 0 && (
         <Table>
           <thead>
             <tr>
@@ -44,15 +65,19 @@ export default function ReservationsPage() {
             </tr>
           </thead>
           <tbody>
-            {data.map((r) => (
+            {reservations.map((r) => (
               <tr key={r.id} style={{ borderTop: '1px solid var(--border)' }}>
                 <td style={{ padding: '.5rem' }}>{r.roomId}</td>
                 <td style={{ padding: '.5rem' }}>{r.resourceId || '-'}</td>
-                <td style={{ padding: '.5rem' }}>{r.date}</td>
+                <td style={{ padding: '.5rem' }}>{new Date(r.date).toLocaleDateString()}</td>
                 <td style={{ padding: '.5rem' }}>{formatTimeRange(r.startTime, r.endTime)}</td>
                 <td style={{ padding: '.5rem' }}>{r.status}</td>
                 <td style={{ padding: '.5rem' }}>
-                  <Button variant="danger" onClick={() => cancel(r.id)} aria-label={`Annuler réservation ${r.id}`}>
+                  <Button
+                    variant="danger"
+                    onClick={() => cancel(r.id)}
+                    aria-label={`Annuler réservation ${r.id}`}
+                  >
                     Supprimer
                   </Button>
                 </td>

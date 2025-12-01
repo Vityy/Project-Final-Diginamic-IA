@@ -1,7 +1,7 @@
 // src/pages/LoginPage.tsx
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { login } from '../services/authService'
+import { api } from '../services/apiClient' // 👈 utilise directement apiClient
 import { useForm } from '../hooks/useForm'
 import { loginSchema } from '../utils/validator'
 import { Input } from '../components/UI/Input'
@@ -22,9 +22,9 @@ export default function LoginPage() {
     if (!validate()) return
     try {
       setSubmitting(true)
-      const res = await login(values.email, values.password) // { token }
-      localStorage.setItem('token', res.token)              // 👈 stocke le token
-      navigate(from, { replace: true })                     // 👈 redirection
+      const res = await api.login(values.email, values.password) // 👈 utilise api.login
+      localStorage.setItem('token', res.token)                   // 👈 stocke le token
+      navigate(from, { replace: true })                          // 👈 redirection
     } catch (err) {
       setServerError((err as Error).message || 'Authentification échouée')
     } finally {

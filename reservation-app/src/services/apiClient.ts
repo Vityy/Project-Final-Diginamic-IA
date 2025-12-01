@@ -48,6 +48,15 @@ export const api = {
     return res.json()
   },
 
+  async deleteReservation(token: string, id: string) {
+    const res = await fetch(`${baseUrl}/reservations/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error('Failed to delete reservation')
+    return res.json()
+  },
+
   /**
    * --- ROOMS ---
    */
@@ -72,6 +81,23 @@ export const api = {
       body: JSON.stringify(room),
     })
     if (!res.ok) throw new Error('Failed to create room')
+    return res.json()
+  },
+
+  async updateRoom(
+    token: string,
+    id: string,
+    room: Partial<{ name: string; capacity: number; location: string }>
+  ) {
+    const res = await fetch(`${baseUrl}/rooms/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(room),
+    })
+    if (!res.ok) throw new Error('Failed to update room')
     return res.json()
   },
 
@@ -108,6 +134,23 @@ export const api = {
       body: JSON.stringify(resource),
     })
     if (!res.ok) throw new Error('Failed to create resource')
+    return res.json()
+  },
+
+  async updateResource(
+    token: string,
+    id: string,
+    resource: Partial<{ type: string; description: string; available: boolean }>
+  ) {
+    const res = await fetch(`${baseUrl}/resources/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(resource),
+    })
+    if (!res.ok) throw new Error('Failed to update resource')
     return res.json()
   },
 

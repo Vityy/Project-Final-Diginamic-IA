@@ -88,6 +88,27 @@ app.post('/api/reservations', authenticateToken, async (req: any, res) => {
 });
 
 /**
+ * ➕ Route DELETE /api/reservations/:id
+ */
+app.delete('/api/reservations/:id', authenticateToken, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+
+    // Vérifie que la réservation existe et appartient à l’utilisateur connecté
+    const reservation = await prisma.reservation.findUnique({ where: { id } });
+    if (!reservation || reservation.userId !== req.userId) {
+      return res.status(404).json({ error: 'Réservation non trouvée' });
+    }
+
+    await prisma.reservation.delete({ where: { id } });
+    res.json({ message: 'Réservation supprimée' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
  * --- ROUTES ROOMS ---
  */
 app.get('/api/rooms', authenticateToken, async (req, res) => {

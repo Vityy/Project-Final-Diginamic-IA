@@ -26,7 +26,13 @@ export default function ReservationFormPage() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    Promise.all([roomsService.list(), resourcesService.list()])
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setError('Utilisateur non authentifié')
+      return
+    }
+
+    Promise.all([roomsService.list(token), resourcesService.list(token)])
       .then(([rms, rcs]) => {
         setRooms(rms)
         setResources(rcs)
@@ -37,17 +43,32 @@ export default function ReservationFormPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    // Validation du schéma
     if (!validate()) return
+
+    // Validation supplémentaire : endTime > startTime
+    if (values.startTime && values.endTime && values.endTime <= values.startTime) {
+      setError('L’heure de fin doit être après l’heure de début')
+      return
+    }
+
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setError('Utilisateur non authentifié')
+      return
+    }
+
     try {
       setSubmitting(true)
-      await reservationsService.create({
+      await reservationsService.create(token, {
         roomId: values.roomId,
         resourceId: values.resourceId || undefined,
         date: values.date,
         startTime: values.startTime,
         endTime: values.endTime,
       })
-      navigate('/')
+      navigate('/reservations')
     } catch (err) {
       setError((err as Error).message || 'Erreur serveur')
     } finally {
@@ -89,9 +110,27 @@ export default function ReservationFormPage() {
           ))}
         </Select>
 
-        <DateInput label="Date" value={values.date} onChange={(e) => set('date', e.target.value)} error={errors.date} required />
-        <TimeInput label="Heure début" value={values.startTime} onChange={(e) => set('startTime', e.target.value)} error={errors.startTime} required />
-        <TimeInput label="Heure fin" value={values.endTime} onChange={(e) => set('endTime', e.target.value)} error={errors.endTime} required />
+        <DateInput
+          label="Date"
+          value={values.date}
+          onChange={(e) => set('date', e.target.value)}
+          error={errors.date}
+          required
+        />
+        <TimeInput
+          label="Heure début"
+          value={values.startTime}
+          onChange={(e) => set('startTime', e.target.value)}
+          error={errors.startTime}
+          required
+        />
+        <TimeInput
+          label="Heure fin"
+          value={values.endTime}
+          onChange={(e) => set('endTime', e.target.value)}
+          error={errors.endTime}
+          required
+        />
 
         <div style={{ marginTop: '1rem' }}>
           <Button type="submit" disabled={submitting} aria-busy={submitting}>
