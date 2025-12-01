@@ -1,36 +1,62 @@
-// prisma/seed.ts
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash('password123', 10)
+  // Hash du mot de passe
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
+  // Création de l’utilisateur de test
   const user = await prisma.user.upsert({
     where: { email: 'demo@exemple.com' },
     update: {},
-    create: { email: 'demo@exemple.com', password: passwordHash },
-  })
+    create: {
+      email: 'demo@exemple.com',
+      password: hashedPassword,
+    },
+  });
 
-  const roomA = await prisma.room.create({ data: { name: 'Salle 101', capacity: 20, location: 'Bâtiment A' } })
-  const roomB = await prisma.room.create({ data: { name: 'Salle 204', capacity: 10, location: 'Bâtiment B' } })
+  // Création d’une salle de test
+  const room = await prisma.room.create({
+    data: {
+      name: 'Salle de réunion A',
+      capacity: 10,
+      location: 'Bâtiment principal',
+    },
+  });
 
-  const resA = await prisma.resource.create({ data: { type: 'Projecteur', description: 'HDMI', available: true } })
-  const resB = await prisma.resource.create({ data: { type: 'Tableau blanc', description: 'Feutres inclus', available: true } })
+  // Création d’une ressource de test
+  const resource = await prisma.resource.create({
+    data: {
+      type: 'Projecteur',
+      description: 'Projecteur HD disponible',
+      available: true,
+    },
+  });
 
+  // Création d’une réservation exemple
   await prisma.reservation.create({
     data: {
       userId: user.id,
-      roomId: roomA.id,
-      resourceId: resA.id,
-      date: '2025-12-02',
-      startTime: '09:00',
-      endTime: '10:00',
+      roomId: room.id,
+      resourceId: resource.id,
+      date: '2025-12-01',   // format ISO YYYY-MM-DD
+      startTime: '15:00',   // format HH:mm
+      endTime: '16:00',     // format HH:mm
       status: 'Confirmed',
     },
-  })
+  });
+
+  console.log('✅ Seed terminé : utilisateur, salle, ressource et réservation créés');
 }
 
-main().finally(async () => {
-  await prisma.$disconnect()
-})
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

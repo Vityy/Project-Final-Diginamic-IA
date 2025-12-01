@@ -11,7 +11,7 @@ import { Alert } from '../components/Feedback/Alert'
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation() as any
-  const from = location.state?.from?.pathname || '/'
+  const from = location.state?.from?.pathname || '/reservations' // 👈 redirection par défaut
   const { values, set, errors, validate } = useForm({ email: '', password: '' }, loginSchema)
   const [submitting, setSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -22,8 +22,9 @@ export default function LoginPage() {
     if (!validate()) return
     try {
       setSubmitting(true)
-      await login(values.email, values.password)
-      navigate(from, { replace: true })
+      const res = await login(values.email, values.password) // { token }
+      localStorage.setItem('token', res.token)              // 👈 stocke le token
+      navigate(from, { replace: true })                     // 👈 redirection
     } catch (err) {
       setServerError((err as Error).message || 'Authentification échouée')
     } finally {
